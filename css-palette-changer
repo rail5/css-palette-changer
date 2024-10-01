@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Small script written out of frustration
+# This script will open a color picker dialog for each UNIQUE hex color code in a CSS file
+# And will edit that CSS file in-place, replacing the old colors for the new ones
+
+# Requires: bash, yad
+## sudo apt install yad
+
+# Usage:
+## css-palette-changer /path/to/original.css
+
+css_file="$1"
+temporary_file="$(mktemp)"
+
+if [[ "$css_file" == "" ]]; then
+	echo "Usage: css-palette-changer /path/to/original.css"
+	exit 1
+fi
+
+# Get a list of all unique color codes
+grep -oPe "[: ]#[0-9a-zA-Z]{6}" "$css_file" | awk -F# '{print $2}' | sort -u > "$temporary_file"
+
+# Run through them and get user choices for alternatives
+while read color; do
+	replacement_color="$(yad --color --init-color=#$color | awk -F# '{print $2}')"
+	sed -i "s/$color/$replacement_color/g" "$css_file"
+done <"$temporary_file"
